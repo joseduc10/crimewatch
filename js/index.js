@@ -15,7 +15,6 @@ $(document).ready(function(){
 			        map.addMarker({
 			            lat: data[i].Latitude,
 			            lng: data[i].Longitude,
-			            color: 'blue',
 			            draggable: false,
 			        });
 			    };

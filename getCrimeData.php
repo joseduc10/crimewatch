@@ -1,5 +1,6 @@
 <?php
-$DBH;
+header('Content-type: application/json');
+$DBH = null;
 try {
 	$host = 'localhost';
 	$dbname = 'crimewatch';
@@ -10,16 +11,23 @@ try {
 	$DBH = new PDO("mysql:host=$host;dbname=$dbname", $user, $pass);
 }
 catch(PDOException $e) {
-	echo "<h1>Database Error</h1>";
+	echo "{'error': 'Could not establish connection with database'}";
 }
 
-$STH = $DBH->query('SELECT Latitude, Longitude, CategoryId As Cat from crimes LIMIT 1000');
-$STH->setFetchMode(PDO::FETCH_ASSOC);
-
-$crimes = array();
-while($row = $STH->fetch()) {
+if ($DBH) {
+	$from_date = (string) $_POST['from_year'] . '-' . str_pad((string) $_POST['from_month'], 2, "0", STR_PAD_LEFT);
+	$to_date = (string) $_POST['to_year'] . '-' . str_pad((string) $_POST['to_month'], 2, "0", STR_PAD_LEFT);
+	//echo $from_date;
+	//echo $to_date;
+	$STH = $DBH->prepare('SELECT Latitude, Longitude, CategoryId As Cat from crimes WHERE Date >= :from_date AND Date <= :to_date', array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY));
+	$STH->execute(array(':from_date' => $from_date, ':to_date' => $to_date));
+	$STH->setFetchMode(PDO::FETCH_ASSOC);
 	
-	$crimes[] = $row;
+	$crimes = array();
+	while($row = $STH->fetch()) {
+		
+		$crimes[] = $row;
+	}
+	echo json_encode($crimes);
 }
-echo json_encode($crimes)
 ?>
