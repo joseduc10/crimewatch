@@ -7,7 +7,7 @@
 <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&key=AIzaSyAG-kRagHR15KmyImetrFcSXdW3Kll3p8Q&sensor=false"></script>
 <script type="text/javascript">
 var map;
-var root = '/crimewatch/images/markers/'
+var root = '/crimewatch/images/markers/';
 var icons = ['blue_MarkerA.png', 'blue_MarkerB.png', 'blue_MarkerC.png',
                'brown_MarkerA.png', 'brown_MarkerB.png', 'brown_MarkerC.png',
                'darkgreen_MarkerA.png', 'darkgreen_MarkerB.png', 'darkgreen_MarkerC.png',
@@ -15,21 +15,24 @@ var icons = ['blue_MarkerA.png', 'blue_MarkerB.png', 'blue_MarkerC.png',
                'purple_MarkerA.png', 'purple_MarkerB.png', 'purple_MarkerC.png',
                'red_MarkerA.png', 'red_MarkerB.png', 'red_MarkerC.png',
                'yellow_MarkerA.png', 'yellow_MarkerB.png', 'yellow_MarkerC.png',
-               'green_MarkerA.png', 'green_MarkerB.png']
+               'green_MarkerA.png', 'green_MarkerB.png'];
 var coordinates;
-var markers = []
+var markers = [];
+var heatmapData = [];
+var pointArray, heatmap;
+
 $(document).ready(function() {
 	//function initialize() {
 	var mapOptions = {
-		center: new google.maps.LatLng(38.8900, -77.0300),
+		center: new google.maps.LatLng(38.8900, -77.2000),
 		zoom: 10,
 		mapTypeId: google.maps.MapTypeId.ROADMAP
 	};
 	map = new google.maps.Map(document.getElementById("map"), mapOptions);
-	$('#from_year').val('2008')
-	$('#from_month').val('1')
-	$('#to_year').val('2009')
-	$('#to_month').val('12')
+	$('#from_year').val('2009');
+	$('#from_month').val('1');
+	$('#to_year').val('2009');
+	$('#to_month').val('12');
 	getCrimeData();
 	$.post("getCategories.php", {},
 		function(data) {
@@ -45,6 +48,8 @@ $(document).ready(function() {
 				             '" class="category" checked="checked">' + data[i].cat + '<br>';				
 				container.append($(html));
 			}
+			container.append('<img src="' + root + icons[data[1].id-1] + '" height="25" width="15" style="visibility:hidden"><input type="checkbox" name="all" id="toggle-category" checked="checked">Select All<br>');
+			container.append('<img src="' + root + icons[data[1].id-1] + '" height="25" width="15" style="visibility:hidden"><input type="checkbox" name="all" id="toggle-heatmap" checked="checked">Show Heatmap<br>');
 			$('select').change(function() {
 				var from_year = $('#from_year').val()
 				var from_month = $('#from_month').val()
@@ -73,6 +78,25 @@ $(document).ready(function() {
 					}
 				}				
 			});	
+			$('#toggle-category').change(function(event) {
+				if (heatmap != null) return;
+				id = event.target.value;
+				cat = event.target.name;
+				if ($('input[name="'+cat+'"]').is(':checked') == false) {
+					$(".category").each( function() {
+						$(this).attr("checked",false);
+						$(this).trigger('change');
+					});
+				} else {
+					$(".category").each( function() {
+						$(this).attr("checked",true);
+						$(this).trigger('change');
+					});
+				}				
+			});
+			$('#toggle-heatmap').change(function(event) {
+				toggleHeatmap();				
+			});
 		}, "json"
 	);
 })
@@ -96,7 +120,8 @@ function getCrimeData() {
 					category: data[i].Cat,
 					map: map
 				});
-				markers.push(marker)
+				markers.push(marker);
+				heatmapData.push(new google.maps.LatLng(data[i].Latitude, data[i].Longitude));				
 			}
 		}, "json"
 	);	
@@ -109,6 +134,26 @@ function deleteMarkers() {
     }
     markers.length = 0;
   }
+  if (heatmapData) { heatmapData.length = 0; }
+}
+
+function toggleHeatmap() {	
+	if (heatmap == null) {
+		$('#toggle-category').attr('checked',false);
+		$('#toggle-category').trigger('change');
+		pointArray = new google.maps.MVCArray(heatmapData);
+		heatmap = new google.maps.visualization.HeatmapLayer({
+        	data: pointArray,
+        	radius: 30
+    	});
+		heatmap.setMap(map);
+	} else {
+		heatmap.setMap(null);
+		heatmap = null;
+		pointArray = null;
+		$('#toggle-category').attr('checked',true);
+		$('#toggle-category').trigger('change');
+	}
 }
 </script>
 </head>

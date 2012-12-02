@@ -19,7 +19,7 @@ if ($DBH) {
 	$to_date = (string) $_POST['to_year'] . '-' . str_pad((string) $_POST['to_month'], 2, "0", STR_PAD_LEFT);
 	//echo $from_date;
 	//echo $to_date;
-	$STH = $DBH->prepare('SELECT Latitude, Longitude, CategoryId As Cat from crimes WHERE Date >= :from_date AND Date <= :to_date', array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY));
+	$STH = $DBH->prepare('SELECT Latitude, Longitude, CategoryId As Cat from crimes WHERE Date >= :from_date AND Date <= :to_date LIMIT 7000', array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY));
 	$STH->execute(array(':from_date' => $from_date, ':to_date' => $to_date));
 	$STH->setFetchMode(PDO::FETCH_ASSOC);
 	
